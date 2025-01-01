@@ -105,7 +105,7 @@ If you'd like to make this macro available across all Excel workbooks, follow th
 
 ### 4. Run the Macro in Any Workbook
 1. Open any Excel workbook.
-2. Press `Alt + F8` to open the **Macro Dialog Box**.
+2. Press `Alt + F8` to open the **Macro Dialog Box**.  (Also available under Macro / Macros )
 3. Select **Transform035Field** from the list.
 4. Click **Run**.
 
