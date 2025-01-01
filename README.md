@@ -81,7 +81,7 @@ If you'd like to make this macro available across all Excel workbooks, follow th
 
 ### 1. Open Excel's Personal Macro Workbook
 1. Open Excel.
-2. Press `Alt + F11` to open the VBA Editor.
+2. Press `Alt + F11` to open the VBA Editor. (Also available under Tools / Macro / Visual Basic Editor)
 3. In the VBA Editor, look for a workbook named `PERSONAL.XLSB` under **VBAProject**.
    - If you don’t see it, you need to create it:
      - Close the VBA Editor.
@@ -92,10 +92,10 @@ If you'd like to make this macro available across all Excel workbooks, follow th
      - This creates the `PERSONAL.XLSB` workbook.
 
 ### 2. Add the VBA Script to the Personal Macro Workbook
-1. Open the VBA Editor (`Alt + F11`).
+1. Open the VBA Editor (`Alt + F11`). (Also available under Tools / Macro / Visual Basic Editor)
 2. Locate `PERSONAL.XLSB` under **VBAProject**.
 3. Expand the project by clicking the `+` icon next to it.
-4. Right-click **Modules**, select **Insert > Module**, and paste your macro code into the module.
+4. Right-click **Modules**, select **Insert > Module**, and paste [the macro code](https://github.com/samato88/VBATransform035/blob/main/Transform035Field.bas) into the module.
 5. Save your changes:
    - Go to **File > Save PERSONAL.XLSB** in the VBA Editor.
 
