@@ -13,14 +13,14 @@ This guide explains how to set up and run the `Transform035Field` macro in Excel
 ## Steps to Use the Macro
 
 ### 1. Open the Excel Workbook
-Ensure your workbook contains a column labeled **`035 field`** in the first row. This should be there be default with exports from the BIG CAT
+Exports from the BIG CAT contain a column labeled **`035 field`** in the first row. Do NOT change this label as it is used to identify which column may contain an OCN. 
 
 ### 2. Open the VBA Editor
 1. Press `Alt + F11` to open the Visual Basic for Applications (VBA) editor. (Also available under Tools / Macro / Visual Basic Editor)
 2. In the VBA editor, go to **Insert > Module**.
 
 ### 3. Paste the Macro Code
-1. Copy the entire macro code provided.
+1. Copy the entire [macro code](https://github.com/samato88/VBATransform035/blob/main/Transform035Field.bas) provided.
 2. Paste the code into the module window.
 
 ### 4. Save the Workbook
