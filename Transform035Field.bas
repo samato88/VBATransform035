@@ -71,6 +71,9 @@ Sub Transform035Field()
                         If Left(Trim(extractedText), Len(validPrefixes(i))) = validPrefixes(i) Then
                             ' Remove the full matched prefix before copying
                             extractedText = Mid(Trim(extractedText), Len(validPrefixes(i)) + 1)
+                            If IsNumeric(extractedText) Then
+                                extractedText = CStr(CLng(extractedText)) ' Strip leading zeros
+                            End If
                             On Error Resume Next
                             uniqueValues.Add Trim(extractedText), Trim(extractedText)
                             On Error GoTo 0
