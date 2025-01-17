@@ -3,17 +3,20 @@ Sub Transform035Field()
     Dim ws As Worksheet
     Dim targetColumn As Range
     Dim newColIndex As Long
-    Dim cell As Range
-    Dim inputText As String
-    Dim extractedText As String
-    Dim validPrefixes As Variant
-    Dim i As Long
     Dim headerCell As Range
-    Dim maxLength As Integer
+    Dim validPrefixes As Variant
+    Dim dataRange As Range
+    Dim inputArray As Variant
+    Dim outputArray() As String
     Dim parts As Variant
     Dim part As Variant
-    Dim results As String
+    Dim extractedText As String
     Dim uniqueValues As Collection
+    Dim i As Long, rowCount As Long
+    Dim maxLength As Integer
+    Dim chunkSize As Long
+    Dim startRow As Long, endRow As Long
+    Dim totalRows As Long
 
     ' Set the worksheet (assumes the macro runs on the active sheet)
     Set ws = ActiveSheet
@@ -26,7 +29,6 @@ Sub Transform035Field()
     Set targetColumn = ws.Rows(1).Find(What:="035 field", LookIn:=xlValues, LookAt:=xlWhole)
     On Error GoTo 0
 
-    ' If the column is found, proceed
     If Not targetColumn Is Nothing Then
         ' Check if the column "Extracted OCLC Number" already exists
         On Error Resume Next
@@ -40,75 +42,94 @@ Sub Transform035Field()
             newColIndex = targetColumn.Column + 1
             ws.Columns(newColIndex).Insert Shift:=xlToRight, CopyOrigin:=xlFormatFromLeftOrAbove
         End If
-        
+
         ' Add or overwrite the header for the new column
         ws.Cells(1, newColIndex).Value = "Extracted OCLC Number"
 
         ' Set the new column format to Text
         ws.Columns(newColIndex).NumberFormat = "@"
 
-        ' Initialize maxLength to track the longest entry
-        maxLength = Len(ws.Cells(1, newColIndex).Value)
+        ' Determine the total number of rows
+        totalRows = ws.Cells(ws.Rows.Count, targetColumn.Column).End(xlUp).Row
+        chunkSize = 50000 ' Process rows in chunks of 50,000
 
-        ' Loop through the cells in the "035 field" column (assuming data starts in row 2)
-        For Each cell In ws.Range(ws.Cells(2, targetColumn.Column), ws.Cells(ws.Rows.Count, targetColumn.Column).End(xlUp))
-            inputText = cell.Value
-            results = ""
+        ' Process rows in chunks
+        For startRow = 2 To totalRows Step chunkSize
+            endRow = Application.Min(startRow + chunkSize - 1, totalRows)
 
-            ' Split the input text by "$"
-            parts = Split(inputText, "$")
+            ' Read the data into an array for faster processing
+            Set dataRange = ws.Range(ws.Cells(startRow, targetColumn.Column), ws.Cells(endRow, targetColumn.Column))
+            inputArray = dataRange.Value
+            rowCount = dataRange.Rows.Count
+            ReDim outputArray(1 To rowCount, 1 To 1)
 
-            ' Initialize collection for unique values
-            Set uniqueValues = New Collection
-
-            ' Loop through each part to find valid "$a" entries
-            For Each part In parts
-                If Left(Trim(part), 1) = "a" Then
-                    extractedText = Mid(Trim(part), 2)
-                    
-                    ' Check if extracted text starts with any valid prefix
-                    For i = LBound(validPrefixes) To UBound(validPrefixes)
-                        If Left(Trim(extractedText), Len(validPrefixes(i))) = validPrefixes(i) Then
-                            ' Remove the full matched prefix before copying
-                            extractedText = Mid(Trim(extractedText), Len(validPrefixes(i)) + 1)
-                            If IsNumeric(extractedText) Then
-                                extractedText = CStr(CLng(extractedText)) ' Strip leading zeros
-                            End If
-                            On Error Resume Next
-                            uniqueValues.Add Trim(extractedText), Trim(extractedText)
-                            On Error GoTo 0
-                            Exit For
-                        End If
-                    Next i
-                End If
-            Next part
-
-            ' Concatenate unique values with a semicolon delimiter
-            If uniqueValues.Count > 0 Then
+            ' Process each row in the chunk
+            For i = 1 To rowCount
+                Dim results As String
+                results = ""
                 Dim val As Variant
-                For Each val In uniqueValues
-                    If results <> "" Then
-                        results = results & "; "
-                    End If
-                    results = results & val
-                Next val
-            End If
 
-            ' Set the results in the new column
-            ws.Cells(cell.Row, newColIndex).Value = results
+                ' Initialize unique values collection
+                Set uniqueValues = New Collection
 
-            ' Update maxLength if necessary
-            If Len(results) > maxLength Then
-                maxLength = Len(results)
-            End If
-        Next cell
+                ' Split the input text by "$"
+                If Not IsEmpty(inputArray(i, 1)) Then
+                    parts = Split(inputArray(i, 1), "$")
+                    For Each part In parts
+                        If Left(Trim(part), 1) = "a" Then
+                            extractedText = Mid(Trim(part), 2)
 
-        ' Adjust the column width to fit the longest entry
-        ws.Columns(newColIndex).ColumnWidth = maxLength + 2
+                            ' Check for valid prefixes
+                            Dim prefix As Variant
+                            For Each prefix In validPrefixes
+                                If Left(Trim(extractedText), Len(prefix)) = prefix Then
+                                    ' Remove the prefix
+                                    extractedText = Mid(Trim(extractedText), Len(prefix) + 1)
 
+                                    ' Validate that the extracted text is numeric
+                                    If IsNumeric(extractedText) Then
+                                        On Error Resume Next
+                                        ' Remove leading zeros safely
+                                        extractedText = CStr(CLng(extractedText))
+                                        On Error GoTo 0
+                                    Else
+                                        ' Skip non-numeric entries
+                                        extractedText = ""
+                                    End If
+
+                                    ' Add to unique collection if valid
+                                    If Len(extractedText) > 0 Then
+                                        On Error Resume Next
+                                        uniqueValues.Add extractedText, extractedText
+                                        On Error GoTo 0
+                                    End If
+
+                                    Exit For
+                                End If
+                            Next prefix
+                        End If
+                    Next part
+                End If
+
+                ' Concatenate unique values with a semicolon delimiter
+                If uniqueValues.Count > 0 Then
+                    For Each val In uniqueValues
+                        If results <> "" Then results = results & "; "
+                        results = results & val
+                    Next val
+                End If
+
+                outputArray(i, 1) = results
+            Next i
+
+            ' Write the processed data back to the worksheet
+            ws.Range(ws.Cells(startRow, newColIndex), ws.Cells(endRow, newColIndex)).Value = outputArray
+        Next startRow
+
+        ' Auto-adjust column width
+        ws.Columns(newColIndex).AutoFit
         MsgBox "Transformation complete!", vbInformation
     Else
         MsgBox "Column labeled '035 field' not found.", vbExclamation
     End If
 End Sub
- 
